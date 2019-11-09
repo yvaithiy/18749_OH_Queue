@@ -65,23 +65,25 @@ def main():
 	timeout = 2.0
 	while 1:
 		server.setblocking(0)
-
 		ready = select.select([server], [], [], timeout)
 		if ready[0]:
 			data = conn.recv(1024)
-			data = pickle.loads(data)
-			#might want to only do this if data is unique
-			with open('gfd_port.csv', 'w') as writeFile:
-				writer = csv.writer(writeFile)
-				writer.writerow(ips)
-				writer.writerow("1")
-				writer.writerow(ips)
-				#need to account for num_replicas here
-				if(data["replica_status"] == "True"):
+			try:
+				data = pickle.loads(data)
+				#might want to only do this if data is unique
+				with open('gfd_port.csv', 'w') as writeFile:
+					writer = csv.writer(writeFile)
+					writer.writerow(ips)
 					writer.writerow("1")
-				else:
-					writer.writerow("0")
-				writer.writerow(ports)
+					writer.writerow(ips)
+					#need to account for num_replicas here
+					if(data["replica_status"] == "True"):
+						writer.writerow("1")
+					else:
+						writer.writerow("0")
+					writer.writerow(ports)
+			except:
+				pass
 		else:
 			print("Connection Timeout")
 
