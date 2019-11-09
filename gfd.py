@@ -67,11 +67,14 @@ def main():
 		server.setblocking(0)
 		ready = select.select([server], [], [], timeout)
 		if ready[0]:
+			print("Heartbeat Received")
 			data = conn.recv(1024)
 			try:
 				data = pickle.loads(data)
+
 				#might want to only do this if data is unique
 				with open('gfd_port.csv', 'w') as writeFile:
+					print("writing")
 					writer = csv.writer(writeFile)
 					writer.writerow(ips)
 					writer.writerow("1")
