@@ -21,7 +21,7 @@ def start1():
 
 #get start signals from all lfds
 def start2():
-	ip_addr = '128.237.216.218'
+	ip_addr = '128.237.209.212'
 	num_replicas = 1
 	global server
 	print("in start2")
@@ -33,8 +33,9 @@ def start2():
 	lfd_status = []
 	replica_status = []
 	while len(replica_ips) < num_replicas:
-		print(socket.gethostbyname(socket.gethostname()))
+		#print(socket.gethostbyname(socket.gethostname()))
 		print("waiting for connection from lfd")
+		print("replica_ips: " + str(replica_ips))
 		conn, addr = server.accept()
 		print('Connection address:' + str(addr))
 		data = conn.recv(1024)
@@ -42,9 +43,21 @@ def start2():
 			data = pickle.loads(data)
 		except:
 			print("LFD Crashed")
+			print("bad data: " + str(data))
 			break
 		print("received data:" + str(data))
-		if data["type"] == "INIT":
+		#only want to append if replica port is not 0
+		while(data["replica_port"] == '0'):
+			print("still waiting")
+			data = conn.recv(1024)
+			try:
+				data = pickle.loads(data)
+			except:
+				print("LFD Crashed")
+				print("bad data: " + str(data))
+				break
+
+		if (data["type"] == "INIT"):
 			if data["replica_ip"] not in replica_ips:
 				replica_ips.append(data["replica_ip"])
 				ports.append(data["replica_port"])
@@ -70,6 +83,7 @@ def main():
 	start1()
 	ips, ports, conn = start2()
 	timeout = 2.0
+
 	while 1:
 		print("waiting for data in main")
 		#server.setblocking(0)
@@ -91,14 +105,12 @@ def main():
 				print("writing")
 				writer = csv.writer(writeFile)
 				writer.writerow(ips)
-				writer.writerow("1")
-				writer.writerow(ips)
-				#need to account for num_replicas here
-				if(data["replica_status"] == "True"):
+				if(data["replica_status"] == True):
 					writer.writerow(ports)
 				else:
-					writer.writerow("0")
-				#writer.writerow(ports)
+					#if replica is down, write 0 to the port
+					writer.writerow('0')
+
 		else:
 			time2 = datetime.datetime.now().time()
 			time_min2 = time2.minute
