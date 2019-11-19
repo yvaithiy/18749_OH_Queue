@@ -21,7 +21,7 @@ def start1():
 
 #get start signals from all lfds
 def start2():
-	ip_addr = '128.237.125.54'
+	ip_addr = '128.237.216.218'
 	num_replicas = 1
 	global server
 	print("in start2")
@@ -95,10 +95,10 @@ def main():
 				writer.writerow(ips)
 				#need to account for num_replicas here
 				if(data["replica_status"] == "True"):
-					writer.writerow("1")
+					writer.writerow(ports)
 				else:
 					writer.writerow("0")
-				writer.writerow(ports)
+				#writer.writerow(ports)
 		else:
 			time2 = datetime.datetime.now().time()
 			time_min2 = time2.minute
