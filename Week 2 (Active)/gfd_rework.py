@@ -34,7 +34,7 @@ def heartbeat(client, addr, port, thread_id):
     while 1:
         #print("waiting for data")
         data = client.recv(1024)
-        print("recv did not hang")
+        #print("recv did not hang")
         if(data):
             time = datetime.datetime.now().time()
             time_min = time.minute
