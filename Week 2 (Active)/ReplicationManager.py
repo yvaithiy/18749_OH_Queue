@@ -194,7 +194,7 @@ def send_membership_to_replicas():
     global ALIVE_PORTs
     message = pack_message()
     for i in range(len(ALIVE_IPs)):
-        print("yoyoyo")
+        #print("yoyoyo")
         host = ALIVE_IPs[i]
         port = int(ALIVE_PORTs[i]) - 10
         client_socket = socket.socket()  # instantiate
