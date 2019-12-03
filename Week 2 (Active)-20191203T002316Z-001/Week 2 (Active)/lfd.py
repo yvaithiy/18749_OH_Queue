@@ -20,9 +20,14 @@ LFD_IP = socket.gethostbyname(socket.gethostname())
 print("LFD running at IP: "+str(LFD_IP))
 def start(s):
 	replica_ready = False
-	f= open(REPLICA_PORT,"r")
+	f= open(REPLICA_PORT,"w")
+	f.write("0")
+	f.close()
+
+	f = open(REPLICA_PORT,"r")
 	content = f.read()
-	while (not content):
+	f.close()
+	while (not content or content=="0"):
 		content = "0"
 		message = {}
 		message["type"] = "INIT"
@@ -31,10 +36,11 @@ def start(s):
 
 		s.send(pickle.dumps(message))
 		time.sleep(GFD_INTERVAL)
+		f = open(REPLICA_PORT,"r")
 		content = f.read()
+		f.close()
 	
 	print("Replica Running...")
-	f.close()
 	content = content.strip()
 	message = {}
 	message["type"] = "INIT"
