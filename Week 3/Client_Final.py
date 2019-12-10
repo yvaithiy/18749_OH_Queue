@@ -73,7 +73,7 @@ def run():
         #         "type": "write",
         #         "value": cmd[1]
         #     }
-
+        
         if random.randint(1,100)<50:
             CLIENT_ID = 'c1'
             seq = seq + 1
@@ -82,7 +82,7 @@ def run():
             CLIENT_ID = 'c2'
             seq2 = seq2 + 1
             msg = CLIENT_ID + ' ' + str(seq2) + ' ' + str(random.randint(1, 749))
-
+        
         for i in range(len(replica_ips)):
             sock_sendr = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
@@ -91,7 +91,7 @@ def run():
                 continue
             sock_sendr.sendall((msg.encode("utf-8")))
             #sock_sendr.close()
-
+            
         time.sleep(TIME_INTERVAL)
 
         # if cmd[0] == "r":

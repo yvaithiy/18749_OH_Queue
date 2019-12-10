@@ -15,8 +15,9 @@ global no_of_messages_updated
 global consistency_flag
 global R2_ADDR
 
-HOST_IP = '128.237.168.193'
+HOST_IP = socket.gethostbyname(socket.gethostname())
 
+HEARTBEAT_FREQ = 1
 
 def heartbeat():
     while True:
@@ -27,10 +28,11 @@ def heartbeat():
         with myfile:
             writer = csv.writer(myfile)
             writer.writerows([aa])
-        time.sleep(1)
+        time.sleep(HEARTBEAT_FREQ)
 
 
 def send_vote(client_id, client_seq_no, client_message):
+    print("SENDING VOTE")
     time.sleep(5)
     host = R2_ADDR  # as both code is running on same pc
     port = 6000  # socket server port number
@@ -43,6 +45,7 @@ def send_vote(client_id, client_seq_no, client_message):
     time.sleep(1)
     data = client_socket.recv(1024).decode()  # receive response
     client_socket.close()  # close the connection
+    time.sleep(1)
     pass
 
 
@@ -57,6 +60,7 @@ def receive_vote():
     server_socket.bind((host, port))  # bind host address and port together
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.listen(0)
+    print('RECEIVING VOTE')
     a = 1
     while a == 1:
         conn, address = server_socket.accept()  # accept new connection
@@ -67,7 +71,7 @@ def receive_vote():
                 break
             recemsg = str(data)
             recemsgsplit = recemsg.split(' ')
-            id = int(recemsgsplit[0])
+            id = recemsgsplit[0]
             seq_no = int(recemsgsplit[1])
             mess = int(recemsgsplit[2])
             a = 0
@@ -92,32 +96,14 @@ def total_order(client_id, client_seq_no, client_message):
         id, seq_no, mess = receive_vote()
         time.sleep(2)
         send_vote(client_id, client_seq_no, client_message)
-    if seq_no == client_seq_no:
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
+    state = int(client_message)
+    no_of_messages_updated = int(no_of_messages_updated) + 1
+    printline = str("The latest state is " + str(state))
+    print(printline)
+    if client_id == 'c1':
+        last_client1_seq_no = int(client_seq_no)
     else:
-        state = int(mess)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if id == 'c1':
-            last_client1_seq_no = int(seq_no)
-        else:
-            last_client2_seq_no = int(seq_no)
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
+        last_client2_seq_no = int(client_seq_no)
     pass
 
 

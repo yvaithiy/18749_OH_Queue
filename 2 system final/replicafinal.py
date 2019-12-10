@@ -15,8 +15,8 @@ global no_of_messages_updated
 global consistency_flag
 global R2_ADDR
 
-HOST_IP = '128.237.168.193'
-
+HOST_IP = socket.gethostbyname(socket.gethostname())
+HEARTBEAT_FREQ = 1
 
 def heartbeat():
     while True:
@@ -27,11 +27,11 @@ def heartbeat():
         with myfile:
             writer = csv.writer(myfile)
             writer.writerows([aa])
-        time.sleep(1)
-
+        time.sleep(HEARTBEAT_FREQ)
 
 def send_vote(client_id, client_seq_no, client_message):
-    time.sleep(5)
+    print("SENDING VOTE")
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 6000  # socket server port number
     client_socket = socket.socket()  # instantiate
@@ -58,6 +58,7 @@ def receive_vote():
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.listen(0)
     a = 1
+    print("RECEIVING VOTE")
     while a == 1:
         conn, address = server_socket.accept()  # accept new connection
         while True:
@@ -67,7 +68,7 @@ def receive_vote():
                 break
             recemsg = str(data)
             recemsgsplit = recemsg.split(' ')
-            id = int(recemsgsplit[0])
+            id = recemsgsplit[0]
             seq_no = int(recemsgsplit[1])
             mess = int(recemsgsplit[2])
             a = 0
@@ -82,18 +83,15 @@ def total_order(client_id, client_seq_no, client_message):
     global last_client1_seq_no
     global last_client2_seq_no
     global state
+    print("TOTAL ORDERING")
     if membership_no == 1:
-        time.sleep(2)
         send_vote(client_id, client_seq_no, client_message)
-        time.sleep(1)
         id, seq_no, mess = receive_vote()
-
     else:
         id, seq_no, mess = receive_vote()
-        time.sleep(2)
         send_vote(client_id, client_seq_no, client_message)
     if seq_no == client_seq_no:
-        state = int(client_message)
+        state = client_message
         no_of_messages_updated = int(no_of_messages_updated) + 1
         printline = str("The latest state is " + str(state))
         print(printline)
@@ -102,7 +100,15 @@ def total_order(client_id, client_seq_no, client_message):
         else:
             last_client2_seq_no = int(client_seq_no)
     else:
-        state = int(mess)
+        state = client_message
+        no_of_messages_updated = int(no_of_messages_updated) + 1
+        printline = str("The latest state is " + str(state))
+        print(printline)
+        if client_id == 'c1':
+            last_client1_seq_no = int(client_seq_no)
+        else:
+            last_client2_seq_no = int(client_seq_no)
+        state = mess
         no_of_messages_updated = int(no_of_messages_updated) + 1
         printline = str("The latest state is " + str(state))
         print(printline)
@@ -110,15 +116,8 @@ def total_order(client_id, client_seq_no, client_message):
             last_client1_seq_no = int(seq_no)
         else:
             last_client2_seq_no = int(seq_no)
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
     pass
+
 
 
 def server_program_client():
@@ -132,7 +131,7 @@ def server_program_client():
     global consistency_flag
     global log_flag
     host = HOST_IP
-    port = 7897  # initiate port no above 1024
+    port = 6897  # initiate port no above 1024
     write_port(port)
     server_socket = socket.socket()  # get instance
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -225,7 +224,7 @@ def server_program_rm():
     global membership
     global R2_ADDR
     host = HOST_IP
-    port = 7887  # initiate port no above 1024
+    port = 6887  # initiate port no above 1024
     server_socket = socket.socket()  # get instance
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))  # bind host address and port together
@@ -248,7 +247,7 @@ def server_program_rm():
             t.append(membershipcount)
             t.append(ip_addr_self)
             t.append(ip_addr_r2)
-            R2_ADDR = ip_addr_self
+            R2_ADDR = ip_addr_r2
             myfile = open('membership.csv', 'w')
             with myfile:
                 writer = csv.writer(myfile)
@@ -263,14 +262,13 @@ def server_program_rm():
 
 
 def send_data():
-    time.sleep(5)
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 5000  # socket server port number
     client_socket = socket.socket()  # instantiate
     client_socket.connect((host, port))  # connect to the serv
     message = str(
-        str(state) + ' ' + str(last_client1_seq_no) + ' ' + str(last_client2_seq_no) + ' ' + str(
-            no_of_messages_updated))  # take input
+        str(state)+ ' ' + str(last_client1_seq_no) + ' ' + str(last_client2_seq_no) + ' ' + str(no_of_messages_updated))  # take input
     print("Sending Message: " + message)
     client_socket.send(message.encode())
     time.sleep(1)
@@ -321,7 +319,7 @@ def send_log():
     global membership_no
     global no_of_messages_updated
     global consistency_flag
-    time.sleep(5)
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 5001  # socket server port number
     client_socket = socket.socket()  # instantiate
@@ -356,7 +354,6 @@ def receive_log():
     server_socket.listen(2)
     conn, address = server_socket.accept()  # accept new connection
     print("Connection from: " + str(address))
-    time.sleep(1)
     with open('received.csv', 'wb') as f:
         time.sleep(1)
         for i in range(300):

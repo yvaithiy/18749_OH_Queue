@@ -15,7 +15,7 @@ global no_of_messages_updated
 global consistency_flag
 global R2_ADDR
 
-HOST_IP = '128.237.168.193'
+HOST_IP = socket.gethostbyname(socket.gethostname())
 
 
 def heartbeat():
@@ -31,7 +31,7 @@ def heartbeat():
 
 
 def send_vote(client_id, client_seq_no, client_message):
-    time.sleep(5)
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 6000  # socket server port number
     client_socket = socket.socket()  # instantiate
@@ -75,25 +75,21 @@ def receive_vote():
     conn.close()  # close the connection
     return id, seq_no, mess
 
-
 def total_order(client_id, client_seq_no, client_message):
     global membership_no
     global no_of_messages_updated
     global last_client1_seq_no
     global last_client2_seq_no
     global state
+    print("TOTAL ORDERING")
     if membership_no == 1:
-        time.sleep(2)
         send_vote(client_id, client_seq_no, client_message)
-        time.sleep(1)
         id, seq_no, mess = receive_vote()
-
     else:
         id, seq_no, mess = receive_vote()
-        time.sleep(2)
         send_vote(client_id, client_seq_no, client_message)
     if seq_no == client_seq_no:
-        state = int(client_message)
+        state = client_message
         no_of_messages_updated = int(no_of_messages_updated) + 1
         printline = str("The latest state is " + str(state))
         print(printline)
@@ -102,7 +98,15 @@ def total_order(client_id, client_seq_no, client_message):
         else:
             last_client2_seq_no = int(client_seq_no)
     else:
-        state = int(mess)
+        state = client_message
+        no_of_messages_updated = int(no_of_messages_updated) + 1
+        printline = str("The latest state is " + str(state))
+        print(printline)
+        if client_id == 'c1':
+            last_client1_seq_no = int(client_seq_no)
+        else:
+            last_client2_seq_no = int(client_seq_no)
+        state = mess
         no_of_messages_updated = int(no_of_messages_updated) + 1
         printline = str("The latest state is " + str(state))
         print(printline)
@@ -110,14 +114,6 @@ def total_order(client_id, client_seq_no, client_message):
             last_client1_seq_no = int(seq_no)
         else:
             last_client2_seq_no = int(seq_no)
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
     pass
 
 
@@ -263,7 +259,7 @@ def server_program_rm():
 
 
 def send_data():
-    time.sleep(5)
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 5000  # socket server port number
     client_socket = socket.socket()  # instantiate
@@ -273,7 +269,6 @@ def send_data():
             no_of_messages_updated))  # take input
     print("Sending Message: " + message)
     client_socket.send(message.encode())
-    time.sleep(1)
     data = client_socket.recv(1024).decode()  # receive response
     client_socket.close()  # close the connection
     pass
@@ -321,7 +316,7 @@ def send_log():
     global membership_no
     global no_of_messages_updated
     global consistency_flag
-    time.sleep(5)
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 5001  # socket server port number
     client_socket = socket.socket()  # instantiate
@@ -356,7 +351,6 @@ def receive_log():
     server_socket.listen(2)
     conn, address = server_socket.accept()  # accept new connection
     print("Connection from: " + str(address))
-    time.sleep(1)
     with open('received.csv', 'wb') as f:
         time.sleep(1)
         for i in range(300):

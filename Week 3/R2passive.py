@@ -15,7 +15,7 @@ global no_of_messages_updated
 global consistency_flag
 global R2_ADDR
 
-HOST_IP = '128.237.168.193'
+HOST_IP = socket.gethostbyname(socket.gethostname())
 
 
 def heartbeat():
@@ -28,97 +28,6 @@ def heartbeat():
             writer = csv.writer(myfile)
             writer.writerows([aa])
         time.sleep(1)
-
-
-def send_vote(client_id, client_seq_no, client_message):
-    time.sleep(5)
-    host = R2_ADDR  # as both code is running on same pc
-    port = 6000  # socket server port number
-    client_socket = socket.socket()  # instantiate
-    client_socket.connect((host, port))  # connect to the serv
-    message = str(
-        str(client_id) + ' ' + str(client_seq_no) + ' ' + str(client_message))  # take input
-    print("Sending Message: " + message)
-    client_socket.send(message.encode())
-    time.sleep(1)
-    data = client_socket.recv(1024).decode()  # receive response
-    client_socket.close()  # close the connection
-    pass
-
-
-def receive_vote():
-    global last_client1_seq_no
-    global last_client2_seq_no
-    global state
-    global no_of_messages_updated
-    host = HOST_IP
-    port = 6000  # initiate port no above 1024
-    server_socket = socket.socket()  # get instance
-    server_socket.bind((host, port))  # bind host address and port together
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.listen(0)
-    a = 1
-    while a == 1:
-        conn, address = server_socket.accept()  # accept new connection
-        while True:
-            data = conn.recv(1024).decode()
-            if not data:
-                a = 0
-                break
-            recemsg = str(data)
-            recemsgsplit = recemsg.split(' ')
-            id = int(recemsgsplit[0])
-            seq_no = int(recemsgsplit[1])
-            mess = int(recemsgsplit[2])
-            a = 0
-            break
-    conn.close()  # close the connection
-    return id, seq_no, mess
-
-
-def total_order(client_id, client_seq_no, client_message):
-    global membership_no
-    global no_of_messages_updated
-    global last_client1_seq_no
-    global last_client2_seq_no
-    global state
-    if membership_no == 1:
-        time.sleep(2)
-        send_vote(client_id, client_seq_no, client_message)
-        time.sleep(1)
-        id, seq_no, mess = receive_vote()
-
-    else:
-        id, seq_no, mess = receive_vote()
-        time.sleep(2)
-        send_vote(client_id, client_seq_no, client_message)
-    if seq_no == client_seq_no:
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
-    else:
-        state = int(mess)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if id == 'c1':
-            last_client1_seq_no = int(seq_no)
-        else:
-            last_client2_seq_no = int(seq_no)
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
-    pass
 
 
 def server_program_client():
@@ -161,6 +70,7 @@ def server_program_client():
             t.append(client_id)
             t.append(client_seq_no)
             t.append(client_message)
+            checkpoint_flag = checkpoint_flag + 1
             myfile = open('logged_data.csv', 'a')
             with myfile:
                 writer = csv.writer(myfile)
@@ -172,14 +82,13 @@ def server_program_client():
                         membercheck.append(row[0])
                         ipaddr.append(row[2])
             mem = int(membercheck[0])
-            if mem == 1:
-                update_state(client_message, client_seq_no, client_id)
-            else:
-                consistency_flag = 0
-                if checkpoint_flag == 0:
+            if mem > 1:
+                if checkpoint_flag == 10 or checkpoint_flag == 0:
                     send_checkpoint()
-                else:
-                    total_order(client_id, client_seq_no, client_message)
+            else:
+                membership_no = 1
+                update_state(client_message, client_seq_no, client_id)
+                checkpoint_flag = 0
             conn.send(data.encode())  # send data to the clientx
             a = 0
             break
@@ -204,8 +113,6 @@ def update_state(client_message, client_seq_no, client_id):
     global no_of_messages_updated
     global log_flag
     membership_no = 1
-    checkpoint_flag = 0
-    log_flag = 0
     state = int(client_message)
     no_of_messages_updated = int(no_of_messages_updated) + 1
     printline = str("The latest state is " + str(state))

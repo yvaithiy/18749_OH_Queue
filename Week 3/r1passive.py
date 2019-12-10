@@ -15,8 +15,8 @@ global no_of_messages_updated
 global consistency_flag
 global R2_ADDR
 
-HOST_IP = '128.237.168.193'
-
+HOST_IP = '128.237.166.152'#socket.gethostbyname(socket.gethostname())
+HEARTBEAT_FREQ = 1
 
 def heartbeat():
     while True:
@@ -27,98 +27,7 @@ def heartbeat():
         with myfile:
             writer = csv.writer(myfile)
             writer.writerows([aa])
-        time.sleep(1)
-
-
-def send_vote(client_id, client_seq_no, client_message):
-    time.sleep(5)
-    host = R2_ADDR  # as both code is running on same pc
-    port = 6000  # socket server port number
-    client_socket = socket.socket()  # instantiate
-    client_socket.connect((host, port))  # connect to the serv
-    message = str(
-        str(client_id) + ' ' + str(client_seq_no) + ' ' + str(client_message))  # take input
-    print("Sending Message: " + message)
-    client_socket.send(message.encode())
-    time.sleep(1)
-    data = client_socket.recv(1024).decode()  # receive response
-    client_socket.close()  # close the connection
-    pass
-
-
-def receive_vote():
-    global last_client1_seq_no
-    global last_client2_seq_no
-    global state
-    global no_of_messages_updated
-    host = HOST_IP
-    port = 6000  # initiate port no above 1024
-    server_socket = socket.socket()  # get instance
-    server_socket.bind((host, port))  # bind host address and port together
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.listen(0)
-    a = 1
-    while a == 1:
-        conn, address = server_socket.accept()  # accept new connection
-        while True:
-            data = conn.recv(1024).decode()
-            if not data:
-                a = 0
-                break
-            recemsg = str(data)
-            recemsgsplit = recemsg.split(' ')
-            id = int(recemsgsplit[0])
-            seq_no = int(recemsgsplit[1])
-            mess = int(recemsgsplit[2])
-            a = 0
-            break
-    conn.close()  # close the connection
-    return id, seq_no, mess
-
-
-def total_order(client_id, client_seq_no, client_message):
-    global membership_no
-    global no_of_messages_updated
-    global last_client1_seq_no
-    global last_client2_seq_no
-    global state
-    if membership_no == 1:
-        time.sleep(2)
-        send_vote(client_id, client_seq_no, client_message)
-        time.sleep(1)
-        id, seq_no, mess = receive_vote()
-
-    else:
-        id, seq_no, mess = receive_vote()
-        time.sleep(2)
-        send_vote(client_id, client_seq_no, client_message)
-    if seq_no == client_seq_no:
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
-    else:
-        state = int(mess)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if id == 'c1':
-            last_client1_seq_no = int(seq_no)
-        else:
-            last_client2_seq_no = int(seq_no)
-        state = int(client_message)
-        no_of_messages_updated = int(no_of_messages_updated) + 1
-        printline = str("The latest state is " + str(state))
-        print(printline)
-        if client_id == 'c1':
-            last_client1_seq_no = int(client_seq_no)
-        else:
-            last_client2_seq_no = int(client_seq_no)
-    pass
+        time.sleep(HEARTBEAT_FREQ)
 
 
 def server_program_client():
@@ -132,7 +41,7 @@ def server_program_client():
     global consistency_flag
     global log_flag
     host = HOST_IP
-    port = 7897  # initiate port no above 1024
+    port = 6897  # initiate port no above 1024
     write_port(port)
     server_socket = socket.socket()  # get instance
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -172,14 +81,17 @@ def server_program_client():
                         membercheck.append(row[0])
                         ipaddr.append(row[2])
             mem = int(membercheck[0])
+            checkpoint_flag = checkpoint_flag + 1
+
             if mem == 1:
                 update_state(client_message, client_seq_no, client_id)
+                checkpoint_flag = 0
             else:
-                consistency_flag = 0
-                if checkpoint_flag == 0:
+                if membership_no == 1:
+                    update_state(client_message, client_seq_no, client_id)
+                if checkpoint_flag == 5:
                     send_checkpoint()
-                else:
-                    total_order(client_id, client_seq_no, client_message)
+                    checkpoint_flag = 0
             conn.send(data.encode())  # send data to the clientx
             a = 0
             break
@@ -204,9 +116,9 @@ def update_state(client_message, client_seq_no, client_id):
     global no_of_messages_updated
     global log_flag
     membership_no = 1
-    checkpoint_flag = 0
+    #checkpoint_flag = 0
     log_flag = 0
-    state = int(client_message)
+    state = client_message
     no_of_messages_updated = int(no_of_messages_updated) + 1
     printline = str("The latest state is " + str(state))
     print(printline)
@@ -223,9 +135,10 @@ def server_program_rm():
     global last_client2_seq_no
     global state
     global membership
+    global membership_no
     global R2_ADDR
     host = HOST_IP
-    port = 7887  # initiate port no above 1024
+    port = 6887  # initiate port no above 1024
     server_socket = socket.socket()  # get instance
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))  # bind host address and port together
@@ -248,7 +161,7 @@ def server_program_rm():
             t.append(membershipcount)
             t.append(ip_addr_self)
             t.append(ip_addr_r2)
-            R2_ADDR = ip_addr_self
+            R2_ADDR = ip_addr_r2
             myfile = open('membership.csv', 'w')
             with myfile:
                 writer = csv.writer(myfile)
@@ -257,20 +170,21 @@ def server_program_rm():
                 print("Membership change")
                 print(str("Total Members: " + recemsgsplit[0]))
                 membership = int(recemsgsplit[0])
+                if(membership == 1):
+                    membership_no = 1
             conn.send(data.encode())  # send data to the client
             break
     conn.close()  # close the connection
 
 
 def send_data():
-    time.sleep(5)
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 5000  # socket server port number
     client_socket = socket.socket()  # instantiate
     client_socket.connect((host, port))  # connect to the serv
     message = str(
-        str(state) + ' ' + str(last_client1_seq_no) + ' ' + str(last_client2_seq_no) + ' ' + str(
-            no_of_messages_updated))  # take input
+        str(state)+ ' ' + str(last_client1_seq_no) + ' ' + str(last_client2_seq_no) + ' ' + str(no_of_messages_updated))  # take input
     print("Sending Message: " + message)
     client_socket.send(message.encode())
     time.sleep(1)
@@ -321,7 +235,7 @@ def send_log():
     global membership_no
     global no_of_messages_updated
     global consistency_flag
-    time.sleep(5)
+    time.sleep(2)
     host = R2_ADDR  # as both code is running on same pc
     port = 5001  # socket server port number
     client_socket = socket.socket()  # instantiate
@@ -356,7 +270,6 @@ def receive_log():
     server_socket.listen(2)
     conn, address = server_socket.accept()  # accept new connection
     print("Connection from: " + str(address))
-    time.sleep(1)
     with open('received.csv', 'wb') as f:
         time.sleep(1)
         for i in range(300):
@@ -372,7 +285,6 @@ def send_checkpoint():
     global checkpoint_flag
     global membership_no
     global log_flag
-    checkpoint_flag = 1
     print("BLOCKING: QUIESCENT STATE")
     if membership_no == 1:
         print("SENDING FINAL STATE")
@@ -381,14 +293,14 @@ def send_checkpoint():
         print("RECEIVING FINAL STATE")
         receive_data()
 
-    if log_flag == 0:
-        log_flag = 1
-        if membership_no == 1:
-            print("SENDING LOGS")
-            send_log()
-        else:
-            print("RECEIVING LOGS")
-            receive_log()
+    # if log_flag == 0:
+    #     log_flag = 1
+    if membership_no == 1:
+        print("SENDING LOGS")
+        send_log()
+    else:
+        print("RECEIVING LOGS")
+        receive_log()
     print("UNBLOCKING")
     pass
 
