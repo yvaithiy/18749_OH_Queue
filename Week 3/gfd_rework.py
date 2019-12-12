@@ -11,7 +11,6 @@ from _thread import *
 import threading
 
 active_conns = []
-addresses = []
 lock = threading.Lock()
 
 def start():
@@ -81,7 +80,7 @@ def heartbeat(client, addr, port, thread_id):
                     with open('gfd_ports.csv', 'w') as writeFile2:
                         writer = csv.writer(writeFile2)
                         #LFD is down (assuming Replica is down)
-                        active_conns.remove((contents[0][thread_id], contents[1][thread_id])) # remove this LFD's addr
+                        #active_conns.remove((contents[0][thread_id], contents[1][thread_id])) # remove this LFD's addr
                         contents[0][thread_id] = 0
                         contents[1][thread_id] = 0
                         writer.writerow(contents[0])
@@ -154,9 +153,8 @@ def lfd_init(client, addr, thread_id):
 def main():
     print("main")
     global active_conns
-    global addresses
     start()
-    ip_addr = '128.237.168.193'
+    ip_addr = '172.26.217.19'
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((ip_addr, 5005))
@@ -165,12 +163,13 @@ def main():
     #accept any number of connections
     while True:
         c, addr = server.accept()
-        print(addr)
-        if addr not in active_conns:
-            active_conns.append(addr)
+        print(addr[0])
+        print(active_conns)
+        if addr[0] not in active_conns:
+            active_conns.append(addr[0])
         #The address of the connection is used to identify threads for indexing the csv
         #This should remain consistent throughout timeouts of the lfds
-        t1 = threading.Thread(target=lfd_init, args=(c, addr, active_conns.index(addr)))
+        t1 = threading.Thread(target=lfd_init, args=(c, addr[0], active_conns.index(addr[0])))
         t1.start()
 
 if __name__== "__main__":

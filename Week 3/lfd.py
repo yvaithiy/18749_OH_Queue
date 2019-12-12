@@ -6,7 +6,7 @@ import time
 
 REPLICA_PORT = "replica_port.csv"
 REPLICA_HEARTBEAT = "replica_heartbeat.csv"
-GFD_IP = '172.26.217.19'
+GFD_IP = '128.237.130.31'
 
 LFD_PORT = 5005
 BUFFER_SIZE = 1024
@@ -16,7 +16,7 @@ GFD_INTERVAL = 1
 # print(socket.gethostbyname(socket.gethostname()))
 
 #LFD_IP = socket.gethostbyname(socket.gethostname())
-LFD_IP = '128.237.166.152'
+LFD_IP = '128.237.115.57'
 
 print("LFD running at IP: "+str(LFD_IP))
 def start(s):
