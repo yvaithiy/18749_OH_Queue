@@ -1,0 +1,5 @@
+rm -f ./replica_port.csv
+rm -f ./replica_heartbeat.csv
+rm -f ./log_data.csv
+rm -f ./membership.csv
+echo Deleted Files

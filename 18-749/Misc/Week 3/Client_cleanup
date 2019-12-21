@@ -1,0 +1,4 @@
+rm -f ./gfd_ports.csv
+rm -f ./Replication_Manager_membership.csv
+rm -f ./gfd_startup.txt
+echo Deleted Files
